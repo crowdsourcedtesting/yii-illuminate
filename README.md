@@ -55,3 +55,9 @@ Add the following block to your config file:
     ]
 ],
 ```
+
+Queuing jobs:
+
+```php
+Yii::app()->queue->push(new SendEmail($message));
+```
