@@ -1,0 +1,20 @@
+<?php
+
+use Illuminate\Database\Capsule\Manager as Capsule;
+use Illuminate\Database\Schema\Blueprint;
+
+class {ClassName} extends ECDbMigration
+{
+    public function safeUp()
+    {
+        Capsule::schema()->create('TABLE_NAME', function(Blueprint $table)
+        {
+            $table->increments('id')->unsigned();
+        });
+    }
+
+    public function safeDown()
+    {
+        Capsule::schema()->drop('TABLE_NAME');
+    }
+}
