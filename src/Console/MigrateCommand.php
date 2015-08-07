@@ -13,7 +13,8 @@ class MigrateCommand extends \MigrateCommand
     protected function getTemplate()
     {
         if ($this->templateFile !== null) {
-            $path = dirname(__FILE__) . DIRECTORY_SEPARATOR . 'stubs';
+            $reflector = new \ReflectionClass('\CST\Yii\Illuminate\Database\Migration\Migration');
+            $path = dirname($reflector->getFileName()) . DIRECTORY_SEPARATOR . 'stubs' . DIRECTORY_SEPARATOR;
 
             return file_get_contents($path . $this->templateFile . '.stub');
         }
@@ -52,7 +53,7 @@ class MigrateCommand extends \MigrateCommand
 
         //set table name (if available)
         if (!empty($this->table)) {
-            $content = str_ireplace('TABLE_NAME', $this->table, $content);
+            $content = str_replace('TABLE_NAME', $this->table, $content);
         }
 
         if ($this->confirm("Create new migration '$file'?")) {
