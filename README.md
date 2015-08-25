@@ -56,6 +56,19 @@ Add the following block to your config file:
 ],
 ```
 
+**Configuring queue command**
+
+Add the following block to your config file:
+
+```
+'commandMap'=> [
+    ...,
+    'queue'=> [
+        'class' => '\CST\Yii\Illuminate\Console\QueueCommand',
+    ],
+],
+```
+
 Queuing jobs:
 
 ```php
