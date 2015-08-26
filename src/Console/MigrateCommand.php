@@ -10,6 +10,32 @@ class MigrateCommand extends \MigrateCommand
      */
     public $table;
 
+    protected function getNewMigrations()
+    {
+        $applied = array();
+        foreach ($this->getMigrationHistory(-1) as $version => $time) {
+//            $applied[substr($version, 1, 13)] = true;
+            $applied[$version] = true;
+        }
+
+        $migrations = array();
+        $handle = opendir($this->migrationPath);
+        while (($file = readdir($handle)) !== false) {
+            if ($file === '.' || $file === '..') {
+                continue;
+            }
+            $path = $this->migrationPath . DIRECTORY_SEPARATOR . $file;
+            if (preg_match('/^(m(\w+?)_.*?)\.php$/', $file,
+                    $matches) && is_file($path) && !isset($applied[$matches[1]])
+            ) {
+                $migrations[] = $matches[1];
+            }
+        }
+        closedir($handle);
+        sort($migrations);
+        return $migrations;
+    }
+
     protected function getTemplate()
     {
         if ($this->templateFile !== null) {
@@ -29,35 +55,35 @@ class MigrateCommand extends \MigrateCommand
     public function actionCreate($args)
     {
         if (isset($args[0])) {
-            $name = $args[0];
+            $tableClassName = $args[0];
         } else {
             $this->usageError('Please provide the name of the new migration.');
         }
 
-        if (!preg_match('/^\w+$/', $name)) {
+        if (!preg_match('/^\w+$/', $tableClassName)) {
             echo "Error: The name of the migration must contain letters, digits and/or underscore characters only.\n";
 
             return 1;
         }
 
         //detect if it's a CREATE or ALTER
-        if (stripos($name, 'create_') === 0) {
+        if (stripos($tableClassName, 'create_') === 0) {
             $this->templateFile = 'create';
         } else {
             $this->templateFile = 'alter';
         }
 
-        $name = 'm' . gmdate('ymd_His') . '_' . $name;
-        $content = strtr($this->getTemplate(), array('{ClassName}' => $name));
-        $file = $this->migrationPath . DIRECTORY_SEPARATOR . $name . '.php';
+        $tableClassName = 'm' . gmdate('ymd_His') . '_' . $tableClassName;
 
-        //set table name (if available)
-        if (!empty($this->table)) {
-            $content = str_replace('TABLE_NAME', $this->table, $content);
-        }
+        $stub = str_replace(
+            ['{{table}}', '{{tableClassName}}'], [$this->table, $tableClassName],
+            $this->getTemplate()
+        );
+
+        $file = $this->migrationPath . DIRECTORY_SEPARATOR . $tableClassName . '.php';
 
         if ($this->confirm("Create new migration '$file'?")) {
-            file_put_contents($file, $content);
+            file_put_contents($file, $stub);
             echo "New migration created successfully.\n";
         }
     }

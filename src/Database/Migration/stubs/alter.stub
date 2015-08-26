@@ -4,18 +4,18 @@ use Illuminate\Database\Capsule\Manager as Capsule;
 use Illuminate\Database\Schema\Blueprint;
 use CST\Yii\Illuminate\Database\Migration\Migration;
 
-class {ClassName} extends Migration
+class {{tableClassName}} extends Migration
 {
     public function safeUp()
     {
-        Capsule::schema()->table('TABLE_NAME', function (Blueprint $table) {
+        Capsule::schema()->table('{{table}}', function (Blueprint $table) {
 
         });
     }
 
     public function safeDown()
     {
-        Capsule::schema()->table('TABLE_NAME', function (Blueprint $table) {
+        Capsule::schema()->table('{{table}}', function (Blueprint $table) {
 
         });
     }
