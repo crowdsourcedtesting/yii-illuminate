@@ -2,6 +2,7 @@
 namespace CST\Yii\Illuminate\Database;
 
 use Carbon\Carbon;
+use Illuminate\Support\Str;
 
 abstract class BaseModel extends \CActiveRecord
 {
@@ -81,6 +82,41 @@ abstract class BaseModel extends \CActiveRecord
      * @var array
      */
     protected $relations = [];
+
+    /**
+     * The attributes that should be hidden for arrays.
+     *
+     * @var array
+     */
+    protected $hidden = [];
+
+    /**
+     * The attributes that should be visible in arrays.
+     *
+     * @var array
+     */
+    protected $visible = [];
+
+    /**
+     * The accessors to append to the model's array form.
+     *
+     * @var array
+     */
+    protected $appends = [];
+
+    /**
+     * Indicates whether attributes are snake cased on arrays.
+     *
+     * @var bool
+     */
+    public static $snakeAttributes = true;
+
+    /**
+     * The cache of the mutated attributes for each class.
+     *
+     * @var array
+     */
+    protected static $mutatorCache = [];
 
     /**
      * Save a new model and return the instance.
@@ -186,6 +222,17 @@ abstract class BaseModel extends \CActiveRecord
     }
 
     /**
+     * Prepare a date for array / JSON serialization.
+     *
+     * @param  \DateTime  $date
+     * @return string
+     */
+    protected function serializeDate(\DateTime $date)
+    {
+        return $date->format($this->getDateFormat());
+    }
+
+    /**
      * Get the format for database stored dates.
      *
      * @return string
@@ -206,7 +253,7 @@ abstract class BaseModel extends \CActiveRecord
         // If the value is already a DateTime instance, we will just skip the rest of
         // these checks since they will be a waste of time, and hinder performance
         // when checking the field. We will just return the DateTime right away.
-        if ($value instanceof \DateTime) {
+        if ($value instanceof DateTime) {
             //
         }
 
@@ -227,7 +274,7 @@ abstract class BaseModel extends \CActiveRecord
         // Finally, we will just assume this date is in the format used by default on
         // the database connection and use that format to create the Carbon object
         // that is returned back out to the developers after we convert it here.
-        elseif (!$value instanceof \DateTime) {
+        elseif (!$value instanceof DateTime) {
             $format = $this->getDateFormat();
 
             return Carbon::createFromFormat($format, $value);
@@ -249,7 +296,7 @@ abstract class BaseModel extends \CActiveRecord
         // If the value is already a DateTime instance, we will just skip the rest of
         // these checks since they will be a waste of time, and hinder performance
         // when checking the field. We will just return the DateTime right away.
-        if ($value instanceof \DateTime) {
+        if ($value instanceof DateTime) {
             //
         }
 
@@ -382,7 +429,7 @@ abstract class BaseModel extends \CActiveRecord
             $this->setUpdatedAt($time);
         }
 
-        if ($this->isNewRecord && !$this->isDirty(static::CREATED_AT)) {
+        if ($this->getIsNewRecord() && !$this->isDirty(static::CREATED_AT)) {
             $this->setCreatedAt($time);
         }
     }
@@ -1007,7 +1054,7 @@ abstract class BaseModel extends \CActiveRecord
 
         $md = $this->getMetaData();
         if (!isset($md->relations[$name])) {
-            throw new \CDbException(\Yii::t('yii', '{class} does not have relation "{name}".',
+            throw new \CDbException(Yii::t('yii', '{class} does not have relation "{name}".',
                 array('{class}' => get_class($this), '{name}' => $name)));
         }
 
@@ -1143,5 +1190,329 @@ abstract class BaseModel extends \CActiveRecord
     {
         $this->touchOwners();
         parent::afterDelete();
+    }
+
+    /**
+     * Convert the model instance to an array.
+     *
+     * @return array
+     */
+    public function toArray()
+    {
+        $attributes = $this->attributesToArray();
+
+        return array_merge($attributes, $this->relationsToArray());
+    }
+
+    /**
+     * Get the model's relationships in array form.
+     *
+     * @return array
+     */
+    public function relationsToArray()
+    {
+        $attributes = [];
+
+        foreach ($this->getArrayableRelations() as $key => $value) {
+            // If the values implements the Arrayable interface we can just call this
+            // toArray method on the instances which will convert both models and
+            // collections to their proper array form and we'll set the values.
+
+            if ($value instanceof Arrayable) {
+                $relation = $value->toArray();
+            }
+
+            //@todo temporary until we implement Collections
+            elseif (is_array($value)) {
+                $relation = array_map(function($model) {
+                    return $model->toArray();
+                }, $value);
+            }
+
+            // If the value is null, we'll still go ahead and set it in this list of
+            // attributes since null is used to represent empty relationships if
+            // if it a has one or belongs to type relationships on the models.
+            elseif (is_null($value)) {
+                $relation = $value;
+            }
+
+            // If the relationships snake-casing is enabled, we will snake case this
+            // key so that the relation attribute is snake cased in this returned
+            // array to the developers, making this consistent with attributes.
+            if (static::$snakeAttributes) {
+                $key = Str::snake($key);
+            }
+
+            // If the relation value has been set, we will set it on this attributes
+            // list for returning. If it was not arrayable or null, we'll not set
+            // the value on the array because it is some type of invalid value.
+            if (isset($relation) || is_null($value)) {
+                $attributes[$key] = $relation;
+            }
+
+            unset($relation);
+        }
+
+        return $attributes;
+    }
+
+    /**
+     * Convert the model's attributes to an array.
+     *
+     * @return array
+     */
+    public function attributesToArray()
+    {
+        $attributes = $this->getArrayableAttributes();
+
+        // If an attribute is a date, we will cast it to a string after converting it
+        // to a DateTime / Carbon instance. This is so we will get some consistent
+        // formatting while accessing attributes vs. arraying / JSONing a model.
+        foreach ($this->getDates() as $key) {
+            if (! isset($attributes[$key])) {
+                continue;
+            }
+
+            $attributes[$key] = $this->serializeDate(
+                $this->asDateTime($attributes[$key])
+            );
+        }
+
+        $mutatedAttributes = $this->getMutatedAttributes();
+
+        // We want to spin through all the mutated attributes for this model and call
+        // the mutator for the attribute. We cache off every mutated attributes so
+        // we don't have to constantly check on attributes that actually change.
+        foreach ($mutatedAttributes as $key) {
+            if (! array_key_exists($key, $attributes)) {
+                continue;
+            }
+
+            $attributes[$key] = $this->mutateAttributeForArray(
+                $key, $attributes[$key]
+            );
+        }
+
+        // Next we will handle any casts that have been setup for this model and cast
+        // the values to their appropriate type. If the attribute has a mutator we
+        // will not perform the cast on those attributes to avoid any confusion.
+        foreach ($this->casts as $key => $value) {
+            if (! array_key_exists($key, $attributes) ||
+                in_array($key, $mutatedAttributes)) {
+                continue;
+            }
+
+            $attributes[$key] = $this->castAttribute(
+                $key, $attributes[$key]
+            );
+        }
+
+        // Here we will grab all of the appended, calculated attributes to this model
+        // as these attributes are not really in the attributes array, but are run
+        // when we need to array or JSON the model for convenience to the coder.
+        foreach ($this->getArrayableAppends() as $key) {
+            $attributes[$key] = $this->mutateAttributeForArray($key, null);
+        }
+
+        return $attributes;
+    }
+
+    /**
+     * Get all of the appendable values that are arrayable.
+     *
+     * @return array
+     */
+    protected function getArrayableAppends()
+    {
+        if (! count($this->appends)) {
+            return [];
+        }
+
+        return $this->getArrayableItems(
+            array_combine($this->appends, $this->appends)
+        );
+    }
+
+    /**
+     * Get an attribute array of all arrayable relations.
+     *
+     * @return array
+     */
+    protected function getArrayableRelations()
+    {
+        return $this->getArrayableItems($this->relations);
+    }
+
+    /**
+     * Get an attribute array of all arrayable attributes.
+     *
+     * @return array
+     */
+    protected function getArrayableAttributes()
+    {
+        return $this->getArrayableItems($this->attributes);
+    }
+
+    /**
+     * Get an attribute array of all arrayable values.
+     *
+     * @param  array  $values
+     * @return array
+     */
+    protected function getArrayableItems(array $values)
+    {
+        if (count($this->getVisible()) > 0) {
+            return array_intersect_key($values, array_flip($this->getVisible()));
+        }
+
+        return array_diff_key($values, array_flip($this->getHidden()));
+    }
+
+    /**
+     * Get the hidden attributes for the model.
+     *
+     * @return array
+     */
+    public function getHidden()
+    {
+        return $this->hidden;
+    }
+
+    /**
+     * Set the hidden attributes for the model.
+     *
+     * @param  array  $hidden
+     * @return void
+     */
+    public function setHidden(array $hidden)
+    {
+        $this->hidden = $hidden;
+    }
+
+    /**
+     * Add hidden attributes for the model.
+     *
+     * @param  array|string|null  $attributes
+     * @return void
+     */
+    public function addHidden($attributes = null)
+    {
+        $attributes = is_array($attributes) ? $attributes : func_get_args();
+
+        $this->hidden = array_merge($this->hidden, $attributes);
+    }
+
+    /**
+     * Get the visible attributes for the model.
+     *
+     * @return array
+     */
+    public function getVisible()
+    {
+        return $this->visible;
+    }
+
+    /**
+     * Set the visible attributes for the model.
+     *
+     * @param  array  $visible
+     * @return void
+     */
+    public function setVisible(array $visible)
+    {
+        $this->visible = $visible;
+    }
+
+    /**
+     * Add visible attributes for the model.
+     *
+     * @param  array|string|null  $attributes
+     * @return void
+     */
+    public function addVisible($attributes = null)
+    {
+        $attributes = is_array($attributes) ? $attributes : func_get_args();
+
+        $this->visible = array_merge($this->visible, $attributes);
+    }
+
+    /**
+     * Get the value of an attribute using its mutator.
+     *
+     * @param  string  $key
+     * @param  mixed   $value
+     * @return mixed
+     */
+    protected function mutateAttribute($key, $value)
+    {
+        return $this->{'get'.Str::studly($key).'Attribute'}($value);
+    }
+
+    /**
+     * Get the value of an attribute using its mutator for array conversion.
+     *
+     * @param  string  $key
+     * @param  mixed   $value
+     * @return mixed
+     */
+    protected function mutateAttributeForArray($key, $value)
+    {
+        $value = $this->mutateAttribute($key, $value);
+
+        return $value instanceof Arrayable ? $value->toArray() : $value;
+    }
+
+    /**
+     * Get the mutated attributes for a given instance.
+     *
+     * @return array
+     */
+    public function getMutatedAttributes()
+    {
+        $class = get_class($this);
+
+        if (! isset(static::$mutatorCache[$class])) {
+            static::cacheMutatedAttributes($class);
+        }
+
+        return static::$mutatorCache[$class];
+    }
+
+    /**
+     * Extract and cache all the mutated attributes of a class.
+     *
+     * @param string $class
+     * @return void
+     */
+    public static function cacheMutatedAttributes($class)
+    {
+        $mutatedAttributes = [];
+
+        // Here we will extract all of the mutated attributes so that we can quickly
+        // spin through them after we export models to their array form, which we
+        // need to be fast. This'll let us know the attributes that can mutate.
+        foreach (get_class_methods($class) as $method) {
+            if (strpos($method, 'Attribute') !== false &&
+                preg_match('/^get(.+)Attribute$/', $method, $matches)) {
+                if (static::$snakeAttributes) {
+                    $matches[1] = Str::snake($matches[1]);
+                }
+
+                $mutatedAttributes[] = lcfirst($matches[1]);
+            }
+        }
+
+        static::$mutatorCache[$class] = $mutatedAttributes;
+    }
+
+    /**
+     * Create a new Eloquent Collection instance.
+     *
+     * @param  array  $models
+     * @return \Illuminate\Database\Eloquent\Collection
+     */
+    public function newCollection(array $models = [])
+    {
+        return new Collection($models);
     }
 }
