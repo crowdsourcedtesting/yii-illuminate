@@ -1,6 +1,7 @@
 <?php
 namespace CST\Yii\Illuminate\Console;
 
+use CST\Yii\Illuminate\Exception\ExceptionHandler;
 use Illuminate\Container\Container;
 use CST\Yii\Illuminate\Queue\DatabaseFailedJobProvider;
 use CST\Yii\Illuminate\Queue\Worker;
@@ -15,6 +16,8 @@ class QueueCommand extends Command
         $queueManager = \Yii::app()->queue->getQueueManager();
 
         $worker = new Worker($queueManager, $failed, $dispatcher);
+        $worker->setDaemonExceptionHandler(new ExceptionHandler());
+
         $worker->daemon('default', $queue, $delay, $memory, $sleep, $maxTries);
     }
 
