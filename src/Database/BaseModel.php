@@ -175,8 +175,9 @@ abstract class BaseModel extends \CActiveRecord
     public static function findOrFail($id, array $columns = [])
     {
         $pk = static::model()->tableSchema->primaryKey;
-        $columns[$pk] = $id;
-        $model = static::model()->findByAttributes($columns);
+        $model = static::model()->findByAttributes([$pk => $id], [
+            'select' => $columns
+        ]);
 
         if (!$model) {
             throw new \CDbException('Model not found');
