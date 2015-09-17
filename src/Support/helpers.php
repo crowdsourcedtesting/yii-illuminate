@@ -48,7 +48,22 @@ if (! function_exists('view')) {
      */
     function view($view = null, $data = [], $return = false)
     {
-        return Yii::app()->controller->render($view, $data, $return);
+        return app('controller')->render($view, $data, $return);
+    }
+}
+
+if (! function_exists('viewPartial')) {
+    /**
+     * Renders the evaluated view contents for the given view and it does not apply a layout to the rendered result
+     *
+     * @param  string  $view
+     * @param  array   $data
+     * @param  bool    $return
+     * @return string
+     */
+    function viewPartial($view = null, $data = [], $return = false)
+    {
+        return app('controller')->renderPartial($view, $data, $return);
     }
 }
 

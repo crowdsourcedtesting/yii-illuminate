@@ -85,12 +85,20 @@ Get the Yii App instance. It's a shortcut for *Yii::app()*. You can also pass th
 app('clientScript')->registerScriptFile(...);
 ```
 
-##### view(string $path, array $data)
+##### view(string $path, array $data, bool $return)
 
 Renders evaluated view contents for the given view. Replaces the typical *$this->render(...)*
 
 ```php
-view('user/profile', ['user' => $user]);
+view('user/view', ['user' => $user]);
+```
+
+##### viewPartial(string $path, array $data, bool $return)
+
+Renders evaluated view contents for the given view and it does not apply a layout to the rendered result. Replaces the typical *$this->renderPartial(...)*
+
+```php
+viewPartial('user/pic', ['user' => $user]);
 ```
 
 ##### request(string $key, $default = null)
