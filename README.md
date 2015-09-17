@@ -74,3 +74,46 @@ Queuing jobs:
 ```php
 Yii::app()->queue->push(new SendEmail($message));
 ```
+
+## Helper Functions
+
+##### app(string $component = null)
+
+Get the Yii App instance. It's a shortcut for *Yii::app()*. You can also pass the component name to get the instance.
+
+```php
+app('clientScript')->registerScriptFile(...);
+```
+
+##### view(string $path, array $data)
+
+Renders evaluated view contents for the given view. Replaces the typical *$this->render(...)*
+
+```php
+view('user/profile', ['user' => $user]);
+```
+
+##### request(string $key, $default = null)
+
+Get an instance of the current request or an input item from the request.
+
+```php
+$modelId = request('id')
+```
+
+##### asset(string $path)
+
+Generate an asset path for the application theme.
+
+```php
+asset('js/main.js');
+asset('images/logo.png');
+```
+
+##### url(string $path, array $parameters, bool $secure)
+
+Generate a url for the application.
+
+```php
+url('project/view', ['id' => 1]);
+```

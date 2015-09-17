@@ -2,9 +2,9 @@
 namespace CST\Yii\Illuminate\Console;
 
 use CST\Yii\Illuminate\Exception\ExceptionHandler;
-use Illuminate\Container\Container;
 use CST\Yii\Illuminate\Queue\DatabaseFailedJobProvider;
 use CST\Yii\Illuminate\Queue\Worker;
+use Illuminate\Container\Container;
 use Illuminate\Events\Dispatcher;
 
 class QueueCommand extends Command
