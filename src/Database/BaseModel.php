@@ -1520,4 +1520,65 @@ abstract class BaseModel extends \CActiveRecord
     {
         return new Collection($models);
     }
+
+    protected function beforeSave()
+    {
+        $this->setDbMode('write');
+        return true;
+    }
+
+    protected function beforeDelete()
+    {
+        $this->setDbMode('write');
+        return true;
+    }
+
+    protected function beforeFind()
+    {
+        $this->setDbMode();
+        return true;
+    }
+
+    protected function beforeCount()
+    {
+        $this->setDbMode();
+        return true;
+    }
+
+    protected function setDbMode($mode = 'read')
+    {
+        if (!property_exists($this->getDbConnection(), 'readConnectionString')) {
+            return;
+        }
+
+        if (!$this->getDbConnection()->isReadWrite()) {
+            \Yii::trace("Read-write mode is not available");
+            return;
+        }
+
+        $db = $this->getDbConnection();
+
+        /**
+         * @var $db DbConnection
+         */
+        if ($mode == 'write') {
+            \Yii::trace('Write mode');
+            if (self::$writeDb) {
+                return self::$db = self::$writeDb;
+            }
+            $conn = clone $db;
+            $conn->setWriteMode();
+            self::$writeDb = $conn;
+            return self::$db = self::$writeDb;
+        }
+
+        \Yii::trace('Read mode');
+
+        if (self::$readDb) {
+            return self::$db = self::$readDb;
+        }
+
+        self::$readDb = app('db');
+        self::$db = self::$readDb;
+    }
 }
