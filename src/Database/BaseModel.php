@@ -7,6 +7,18 @@ use Illuminate\Support\Str;
 abstract class BaseModel extends \CActiveRecord
 {
     /**
+     * @var CDbConnection
+     * @see setDbMode
+     */
+    public static $readDb;
+
+    /**
+     * @var CDbConnection
+     * @see setDbMode
+     */
+    public static $writeDb;
+
+    /**
      * The name of the "created at" column.
      *
      * @var string
