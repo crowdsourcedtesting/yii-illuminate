@@ -1,5 +1,5 @@
 <?php
-namespace LeanTesting\Database\Yii;
+namespace CST\Yii\Illuminate\Database;
 
 use CDbConnection;
 use CDbException;
