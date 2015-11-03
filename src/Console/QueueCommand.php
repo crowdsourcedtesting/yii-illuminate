@@ -3,17 +3,22 @@ namespace CST\Yii\Illuminate\Console;
 
 use CST\Yii\Illuminate\Exception\ExceptionHandler;
 use CST\Yii\Illuminate\Queue\DatabaseFailedJobProvider;
+use CST\Yii\Illuminate\Queue\FailedJob;
 use CST\Yii\Illuminate\Queue\Worker;
 use Illuminate\Container\Container;
 use Illuminate\Events\Dispatcher;
 
 class QueueCommand extends Command
 {
+    public $failedJobsTableName = 'failed_jobs';
+
     public function actionListen($queue = 'default', $memory = '128', $delay = 0, $sleep = 3, $maxTries = 0)
     {
+        FailedJob::setTableName($this->failedJobsTableName);
+
         $failed = new DatabaseFailedJobProvider();
         $dispatcher = new Dispatcher(new Container());
-        $queueManager = \Yii::app()->queue->getQueueManager();
+        $queueManager = app()->queue->getQueueManager();
 
         $worker = new Worker($queueManager, $failed, $dispatcher);
         $worker->setDaemonExceptionHandler(new ExceptionHandler());
@@ -23,7 +28,7 @@ class QueueCommand extends Command
 
     public function actionFailedJobsMigration($table = 'failed_jobs')
     {
-        $name = 'm' . '_create_' . $table . '_table';
+        $name = 'm150606_150521_create_' . $table . '_table';
 
         $stub = str_replace(
             ['{{table}}', '{{tableClassName}}'], [$table, $name],

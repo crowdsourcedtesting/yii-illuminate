@@ -5,6 +5,7 @@ use CST\Yii\Illuminate\Database\BaseModel;
 
 class FailedJob extends BaseModel
 {
+    private static $tableName = 'failed_jobs';
     public $timestamps = false;
 
     protected $dates = ['failed_at'];
@@ -20,11 +21,19 @@ class FailedJob extends BaseModel
     }
 
     /**
+     * @param string $tableName
+     */
+    public static function setTableName($tableName)
+    {
+        self::$tableName = $tableName;
+    }
+
+    /**
      * @return string the associated database table name
      */
     public function tableName()
     {
-        return 'failed_jobs';
+        return self::$tableName;
     }
 
     /**
