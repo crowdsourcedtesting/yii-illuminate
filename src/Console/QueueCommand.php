@@ -7,6 +7,7 @@ use CST\Yii\Illuminate\Queue\FailedJob;
 use CST\Yii\Illuminate\Queue\Worker;
 use Illuminate\Container\Container;
 use Illuminate\Events\Dispatcher;
+use Yii;
 
 class QueueCommand extends Command
 {
@@ -18,7 +19,7 @@ class QueueCommand extends Command
 
         $failed = new DatabaseFailedJobProvider();
         $dispatcher = new Dispatcher(new Container());
-        $queueManager = app()->queue->getQueueManager();
+        $queueManager = Yii::app()->queue->getQueueManager();
 
         $worker = new Worker($queueManager, $failed, $dispatcher);
         $worker->setDaemonExceptionHandler(new ExceptionHandler());
@@ -35,7 +36,7 @@ class QueueCommand extends Command
             file_get_contents(__DIR__ . '/stubs/failed_jobs.stub')
         );
 
-        $file = \Yii::getPathOfAlias('application.migrations') . DIRECTORY_SEPARATOR . $name . '.php';
+        $file = Yii::getPathOfAlias('application.migrations') . DIRECTORY_SEPARATOR . $name . '.php';
 
         if ($this->confirm("Create new migration '$file'?")) {
             file_put_contents($file, $stub);
