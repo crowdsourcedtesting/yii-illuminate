@@ -1,6 +1,8 @@
 <?php
 namespace CST\Yii\Illuminate\Queue;
 
+use Yii;
+
 trait DispatchesJobs
 {
     /**
