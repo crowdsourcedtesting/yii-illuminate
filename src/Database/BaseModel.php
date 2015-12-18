@@ -1175,7 +1175,7 @@ abstract class BaseModel extends \CActiveRecord
 
         $this->updateTimestamps();
 
-        return $this->save();
+        return $this->save(false, [static::UPDATED_AT, static::CREATED_AT]);
     }
 
     /**
