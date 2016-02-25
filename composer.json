@@ -24,6 +24,7 @@
     "illuminate/redis": "5.1.*",
     "illuminate/queue": "5.1.*",
     "illuminate/view": "5.1.*",
+    "illuminate/support": "5.1.*",
     "yiisoft/yii": "~1.1.16"
   }
 }
