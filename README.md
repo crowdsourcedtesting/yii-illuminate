@@ -19,7 +19,7 @@ composer require cst/yii-illuminate
 
 ### Migrate command
 
-Supercharges Yii `MigrateCommand` with all the functionality of the [Laravel Schema Builder](http://laravel.com/docs/5.0/schema)
+Supercharges Yii `MigrateCommand` with all the functionality of the [Laravel Schema Builder](http://laravel.com/docs/5.1/migrations)
 
 Add the following block to your config file:
 
@@ -73,6 +73,14 @@ Queuing jobs:
 
 ```php
 Yii::app()->queue->push(new SendEmail($message));
+```
+
+or 
+
+```php
+use CST\Yii\Illuminate\Queue\DispatchesJobs;
+
+$this->dispatch(new SendEmail($message));
 ```
 
 ## Helper Functions
