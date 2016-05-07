@@ -93,6 +93,14 @@ Get the Yii App instance. It's a shortcut for *Yii::app()*. You can also pass th
 app('clientScript')->registerScriptFile(...);
 ```
 
+##### t(string $category, string $message, array $params = [], string $source = null, string $language = null)
+
+*Yii::t()* shortcut for translating messages.
+
+```php
+t('Project', 'Save changes');
+```
+
 ##### view(string $path, array $data, bool $return)
 
 Renders evaluated view contents for the given view. Replaces the typical *$this->render(...)*
