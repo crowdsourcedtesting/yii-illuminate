@@ -96,7 +96,7 @@ if (! function_exists('t')) {
      * @param  string  $language
      * @return string
      */
-    function t(string $category, string $message, array $params = [], string $source = null, string $language = null)
+    function t($category, $message, $params = [], $source = null, $language = null)
     {
         return Yii::t($category, $message, $params, $source, $language);
     }
