@@ -85,6 +85,23 @@ if (! function_exists('app')) {
     }
 }
 
+if (! function_exists('t')) {
+    /**
+     * Shortcut for translating a message
+     *
+     * @param  string  $category
+     * @param  string  $message
+     * @param  array   $params
+     * @param  string  $source
+     * @param  string  $language
+     * @return string
+     */
+    function t(string $category, string $message, array $params = [], string $source = null, string $language = null)
+    {
+        return Yii::t($category, $message, $params, $source, $language);
+    }
+}
+
 if (! function_exists('request')) {
     /**
      * Get an instance of the current request or an input item from the request.
