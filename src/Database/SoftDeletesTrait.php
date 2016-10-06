@@ -45,7 +45,7 @@ trait SoftDeletesTrait
     public function defaultScope()
     {
         return [
-            'condition' => '`'. $this->getDeletedAtColumn() .'` IS NULL',
+            'condition' => $this->getTableAlias(true, false) . '.`'. $this->getDeletedAtColumn() .'` IS NULL',
         ];
     }
 
@@ -56,7 +56,7 @@ trait SoftDeletesTrait
     public function withTrashed()
     {
         $this->getDbCriteria()->mergeWith([
-            'condition' => '`'. $this->getDeletedAtColumn() .'` IS NOT NULL',
+            'condition' => $this->getTableAlias(true, false) . '.`'. $this->getDeletedAtColumn() .'` IS NOT NULL',
         ], false);
         return $this;
     }
@@ -69,7 +69,7 @@ trait SoftDeletesTrait
     {
         $criteria = $this->getDbCriteria();
         $criteria->condition = '';
-        $criteria->mergeWith([ 'condition' => '`'. $this->getDeletedAtColumn() .'` IS NOT NULL' ]);
+        $criteria->mergeWith([ 'condition' => $this->getTableAlias(true, false) . '.`'. $this->getDeletedAtColumn() .'` IS NOT NULL' ]);
         return $this;
     }
 
